@@ -91,8 +91,8 @@ def get_correct_total(logit, labels):
 
 
 def _variable_on_cpu(name, shape, initializer):
-  with tf.device('/cpu:0'):
-    var = tf.get_variable(name, shape, initializer=initializer)
+  #with tf.device('/cpu:0'):
+  var = tf.get_variable(name, shape, initializer=initializer)
   return var
 
 
@@ -104,30 +104,33 @@ def _variable_with_weight_decay(name, shape, wd):
   return var
 
 
-def run_epoch(session, x, y, data, correct, total, train_op=None):
+def run_epoch(session, x, y, data, correct, total, loss, train_op=None):
   corrects = 0
   totals = 0
+  losses = 0
   
   for i in range(data.epoch_size):
     images, labels = data.get_batch(i)
     if train_op:
-      _, cor, tot = session.run(
-          [train_op, correct, total], 
+      _, cor, tot, loss_val = session.run(
+          [train_op, correct, total, loss], 
           feed_dict={x: images,
                      y: labels[:, -1]})
     else:
-      cor, tot = session.run(
-          [correct, total], 
+      cor, tot, loss_val = session.run(
+          [correct, total, loss], 
           feed_dict={x: images,
                      y: labels[:, -1]})
     corrects += cor
     totals += tot
+    #print(loss_val.shape)
+    losses += np.sum(loss_val)
 
     if i % (data.epoch_size // 10) == 10 and train_op:
       #saver.save(sess, os.path.join(model_save_dir, 'c3d_ucf_model'), global_step=step)
-      print("%.1f train acc: %.5f" % (i/data.epoch_size, corrects/totals))
+      print("%.1f train loss: %.3f, acc: %.5f" % (i/data.epoch_size, losses/(i+1), corrects/totals))
     
-  return corrects / totals
+  return corrects / totals, losses / data.epoch_size
 
 
 def format_time(duration):
@@ -239,14 +242,14 @@ def run():
       for epoch in range(config.num_epochs):
         start_time = time.time()
         
-        train_acc = run_epoch(
-            sess, images_placeholder, labels_placeholder, train_data, correct, total, train_op)
-        valid_acc = run_epoch(
-            sess, images_placeholder, labels_placeholder, valid_data, correct, total)
+        train_acc, train_loss = run_epoch(
+            sess, images_placeholder, labels_placeholder, train_data, correct, total, loss, train_op)
+        valid_acc, valid_loss = run_epoch(
+            sess, images_placeholder, labels_placeholder, valid_data, correct, total, loss)
         
         duration = time.time() - start_time
-        print('Epoch %d train acc: %.5f, valid acc: %.5f, duration: %d:%02d:%02d' % \
-              ((epoch + 1, train_acc, valid_acc) + format_time(duration)))
+        print('Epoch %d train loss: %.3f, acc: %.5f. Valid loss: %.3f, acc: %.5f, duration: %d:%02d:%02d' % \
+              ((epoch + 1, train_loss, train_acc, valid_loss, valid_acc) + format_time(duration)))
         
         if valid_acc > best_valid_acc:
           save_path = saver.save(
@@ -256,11 +259,11 @@ def run():
     else:
       saver.restore(sess, os.path.join(config.model_save_dir, config.model_filename))
       print("Model restored")
-      best_valid_acc = run_epoch(
+      best_valid_acc, best_valid_loss = run_epoch(
           sess, images_placeholder, labels_placeholder, valid_data, correct, total)
 
   total_duration = time.time() - global_start_time
-  print("Done. Best validation accuracy: %.5f. Total duration: %d:%02d:%02d" % ((best_valid_acc,) + format_time(total_duration)))
+  print("Done. Best validation loss: %.3f, accuracy: %.5f. Total duration: %d:%02d:%02d" % ((best_valid_loss, best_valid_acc) + format_time(total_duration)))
 
 
 if __name__ == '__main__':
