@@ -36,8 +36,8 @@ class Config():
   model_filename = 'prosthesis_model'
 
   # Training/Validation split
-  # train_trials = [1, 2, 4, 5]
-  train_trials = [1, 2]
+  train_trials = [1, 2, 4, 5]
+  # train_trials = [1, 2]
   valid_trials = [3]
 
     
