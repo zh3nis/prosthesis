@@ -28,15 +28,15 @@ class Config():
   crop_size = 112
   channels = 1
   num_frames_per_clip = 16
-  num_classes = 101
+  num_classes = 5
     
   # Other parameters
   model_save_dir = './models'
   model_filename = 'prosthesis_model'
 
   # Training/Validation split
-  train_trials = [1, 2, 3, 4]
-  valid_trials = [5]
+  train_trials = [1, 2, 4, 5]
+  valid_trials = [3]
 
     
 def placeholder_inputs(config):

@@ -24,11 +24,11 @@ class MyData:
     self.mylabels = []
     self.epoch_size = 0
     self.str_to_label = {
-        "run": 1,
-        "walk": 2,
-        "stand": 3,
-        "stairs up": 4,
-        "stairs down": 5
+        "run": 0,
+        "walk": 1,
+        "stand": 2,
+        "stairs up": 3,
+        "stairs down": 4
     }
     self.read_data()
 
