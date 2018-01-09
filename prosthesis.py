@@ -23,6 +23,7 @@ class Config():
   stable_learning_rate = 1e-4
   finetune_learning_rate = 1e-3
   drop_rate = 0.5
+  batch_sampling = 'random'
 
   # Model hyperparameters
   crop_size = 112
@@ -35,7 +36,8 @@ class Config():
   model_filename = 'prosthesis_model'
 
   # Training/Validation split
-  train_trials = [1, 2, 4, 5]
+  # train_trials = [1, 2, 4, 5]
+  train_trials = [1, 2]
   valid_trials = [3]
 
     

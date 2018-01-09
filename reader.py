@@ -10,7 +10,7 @@ import PIL.Image as Image
 import cv2
 import re
 import sys
-
+import random
 
 class MyData:
   def __init__(self, path, set_indices, config, data_type):
@@ -20,6 +20,9 @@ class MyData:
     self.num_frames = config.num_frames_per_clip
     self.data_type = data_type
     self.crop_size = config.crop_size
+    self.doRandom = False
+    if (config.batch_sampling == 'random'):
+        self.doRandom = True 
     self.mydb = []
     self.mylabels = []
     self.epoch_size = 0
@@ -32,13 +35,14 @@ class MyData:
     }
     self.read_data()
 
-  def get_batch(self, ind):
+  def get_batch(self, myind):
     # 1st: from batch_size*0+ind -> to -> batch_size*0 + ind+num_frames-1
     # 2nd: from batch_size*1+ind -> to -> batch_size*1 + ind+num_frames-1
     # ith: from batch_size*i+ind -> to -> batch_size*i + ind+num_frames-1
     # nth: from batch_size*(div_num-1)+ind -> to -> batch_size*(div_num-1) + ind+num_frames-1
     result = []
     labels = []
+    ind = self.random_ind[myind]
     for i in range(0, self.batch_size): # by batches 
       # by num of frames
       part1 = self.mydb[xrange(self.div_num * i + ind, self.div_num * i + ind + self.num_frames), : , : ] 
@@ -97,4 +101,7 @@ class MyData:
     self.mydb = np.expand_dims(np.array(self.mydb), axis=3)
     self.div_num = int(math.floor(self.mydb.shape[0]/self.batch_size))
     self.epoch_size = self.div_num - self.num_frames + 1        
+    self.random_ind = range(self.epoch_size)
+    if (self.doRandom):
+        random.shuffle(self.random_ind)
     print("Done. Shape: " + str(self.mydb.shape) + ", Epoch size: " + str(self.epoch_size))
