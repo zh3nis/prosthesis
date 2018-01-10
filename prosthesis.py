@@ -256,11 +256,11 @@ def run():
               sess, os.path.join(config.model_save_dir, config.model_filename))
           print('Valid accuracy improved. Model saved in file: %s' % save_path)
           best_valid_acc = valid_acc
-    else:
-      saver.restore(sess, os.path.join(config.model_save_dir, config.model_filename))
-      print("Model restored")
-      best_valid_acc, best_valid_loss = run_epoch(
-          sess, images_placeholder, labels_placeholder, valid_data, correct, total)
+    
+    saver.restore(sess, os.path.join(config.model_save_dir, config.model_filename))
+    print("Model restored")
+    best_valid_acc, best_valid_loss = run_epoch(
+        sess, images_placeholder, labels_placeholder, valid_data, correct, total, loss)
 
   total_duration = time.time() - global_start_time
   print("Done. Best validation loss: %.3f, accuracy: %.5f. Total duration: %d:%02d:%02d" % ((best_valid_loss, best_valid_acc) + format_time(total_duration)))
