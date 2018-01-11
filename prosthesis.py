@@ -21,7 +21,7 @@ class Config():
   moving_average_decay = 0.9999
   num_epochs = 16
   stable_learning_rate = 1e-4
-  finetune_learning_rate = 1e-3
+  finetune_learning_rate = 1e-4
   drop_rate = 0.5
   batch_sampling = 'random'
 
