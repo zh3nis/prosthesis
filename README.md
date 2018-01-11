@@ -19,3 +19,8 @@ To train the model run:
 ```
 python prosthesis.py
 ```
+To use a particular GPU use the `--gpu` key, e.g.
+```
+python prosthesis.py --gpu 1
+```
+where GPU ID (1 in the example above) corresponds to the ID from `nvidia-smi` tool.
