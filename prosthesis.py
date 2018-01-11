@@ -3,7 +3,6 @@ from __future__ import print_function
 
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import time
 import numpy
 from six.moves import xrange
@@ -12,6 +11,7 @@ import c3d_model
 import math
 import numpy as np
 from reader import MyData
+import argparse
 
 
 class Config():
@@ -138,8 +138,17 @@ def format_time(duration):
   h, m = divmod(m, 60)
   return h, m, s
 
+def parse_args():
+  '''Parse command line arguments'''
+  parser = argparse.ArgumentParser(formatter_class=
+                                   argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument('--gpu', default='0',
+                      help='GPU ID to use.')
+  return parser.parse_args()
 
 def run():
+  args = parse_args()
+  os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
   global_start_time = time.time()
 
   config = Config()
