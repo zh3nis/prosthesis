@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import time
 import numpy
 from six.moves import xrange
@@ -11,7 +11,7 @@ import tensorflow as tf
 import c3d_model
 import math
 import numpy as np
-from reader_skipper import MyData
+from reader import MyData
 
 
 class Config():
@@ -21,8 +21,8 @@ class Config():
   moving_average_decay = 0.9999
   num_epochs = 16
   stable_learning_rate = 1e-4
-  finetune_learning_rate = 1e-4
-  drop_rate = 0.1
+  finetune_learning_rate = 1e-3
+  drop_rate = 0.5
   batch_sampling = 'random'
 
   # Model hyperparameters
@@ -34,7 +34,6 @@ class Config():
   # Other parameters
   model_save_dir = './models'
   model_filename = 'prosthesis_model'
-  skipstep=2
 
   # Training/Validation split
   train_trials = [1, 2, 4, 5]
@@ -45,7 +44,7 @@ class Config():
 def placeholder_inputs(config):
   images_placeholder = tf.placeholder(
       tf.float32, shape=(config.batch_size, 
-                         config.num_frames_per_clip / config.skipstep,
+                         config.num_frames_per_clip,
                          config.crop_size, 
                          config.crop_size,
                          config.channels))
@@ -110,7 +109,7 @@ def run_epoch(session, x, y, data, correct, total, loss, train_op=None):
   totals = 0
   losses = 0
   
-  for i in range(data.epoch_size):
+  for i in range((int)(data.epoch_size / 2)):
     images, labels = data.get_batch(i)
     if train_op:
       _, cor, tot, loss_val = session.run(
@@ -140,10 +139,12 @@ def format_time(duration):
   return h, m, s
 
 
-def run():
+def run(finetune_lr, stable_lr):
   global_start_time = time.time()
 
   config = Config()
+  config.stable_learning_rate = stable_lr
+  config.finetune_learning_rate = finetune_lr
 
   # Create model directory
   if not os.path.exists(config.model_save_dir):
@@ -257,15 +258,24 @@ def run():
               sess, os.path.join(config.model_save_dir, config.model_filename))
           print('Valid accuracy improved. Model saved in file: %s' % save_path)
           best_valid_acc = valid_acc
-    
-    saver.restore(sess, os.path.join(config.model_save_dir, config.model_filename))
-    print("Model restored")
-    best_valid_acc, best_valid_loss = run_epoch(
-        sess, images_placeholder, labels_placeholder, valid_data, correct, total, loss)
+	break
+    else:
+      saver.restore(sess, os.path.join(config.model_save_dir, config.model_filename))
+      print("Model restored")
+      best_valid_acc, best_valid_loss = run_epoch(
+          sess, images_placeholder, labels_placeholder, valid_data, correct, total)
 
   total_duration = time.time() - global_start_time
-  print("Done. Best validation loss: %.3f, accuracy: %.5f. Total duration: %d:%02d:%02d" % ((best_valid_loss, best_valid_acc) + format_time(total_duration)))
+  #print("Done. Best validation loss: %.3f, accuracy: %.5f. Total duration: %d:%02d:%02d" % ((best_valid_loss, best_valid_acc) + format_time(total_duration)))
 
 
 if __name__ == '__main__':
-  run()
+  stable_lr = 1.0
+  for i in range(10):	
+    finetune_lr = 1.0
+    stable_lr /= 10
+    for j in range(10):
+      finetune_lr /= 10
+      print("running for stable and finetune LR: " + str(stable_lr) + " " + str(finetune_lr))
+      run(finetune_lr, stable_lr)
+      print("-----------------------------------------------------------------------------------")

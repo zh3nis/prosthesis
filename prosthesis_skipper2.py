@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import time
 import numpy
 from six.moves import xrange
@@ -22,7 +22,7 @@ class Config():
   num_epochs = 16
   stable_learning_rate = 1e-4
   finetune_learning_rate = 1e-4
-  drop_rate = 0.1
+  drop_rate = 0.9
   batch_sampling = 'random'
 
   # Model hyperparameters
