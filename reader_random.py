@@ -99,8 +99,8 @@ class MyData:
   
     self.mydb = np.expand_dims(np.array(self.mydb), axis=3)
     self.div_num = int(math.floor(self.mydb.shape[0]/self.batch_size))
-    self.epoch_size = self.div_num
-    self.random_ind = range(self.mydb.shape[0] - self.num_frames + 1)
+    self.random_ind = range(self.mydb.shape[0] - self.num_frames)
+    self.epoch_size = self.mydb.shape[0] - self.num_frames
     if (self.doRandom):
         random.shuffle(self.random_ind)
     print("Done. Shape: " + str(self.mydb.shape) + ", Epoch size: " + str(self.epoch_size))
