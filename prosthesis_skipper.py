@@ -22,7 +22,7 @@ class Config():
   num_epochs = 16
   stable_learning_rate = 1e-4
   finetune_learning_rate = 1e-4
-  drop_rate = 0.1
+  drop_rate = 0.5
   batch_sampling = 'random'
 
   # Model hyperparameters

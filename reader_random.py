@@ -37,17 +37,21 @@ class MyData:
     }
     self.read_data()
 
-  def get_batch(self):
+  def reset_internal_counter(self):
+    self.internal_counter = 0
+
+  def get_batch(self, myind):
     result = []
     labels = []
     for i in range(0, self.batch_size): # by batches 
       ind = self.random_ind[self.internal_counter]
       # get num frames with mystep skip starting from random index
-      part1 = self.mydb[	xrange(ind, ind + self.num_frames - 1, self.mystep), : , : ] 
-      lbls = self.mylabels[	xrange(ind, ind + self.num_frames - 1, self.mystep)]
+      part1 = self.mydb[	xrange(ind, ind + self.num_frames, self.mystep), : , : ] 
+      lbls = self.mylabels[	xrange(ind, ind + self.num_frames, self.mystep)]
       labels.append(lbls)
       result.append(part1)
       self.internal_counter += 1
+      #print("internal counter is: " + str(self.internal_counter) + " of " + str(self.epoch_size))
     return (np.array(result), np.array(labels))
           
   def read_data(self):
@@ -99,8 +103,8 @@ class MyData:
   
     self.mydb = np.expand_dims(np.array(self.mydb), axis=3)
     self.div_num = int(math.floor(self.mydb.shape[0]/self.batch_size))
-    self.random_ind = range(self.mydb.shape[0] - self.num_frames)
-    self.epoch_size = self.mydb.shape[0] - self.num_frames
+    self.random_ind = range(self.mydb.shape[0] - self.num_frames + 1)
+    self.epoch_size = int(math.floor((self.mydb.shape[0] - self.num_frames + 1)/(self.batch_size)))
     if (self.doRandom):
         random.shuffle(self.random_ind)
     print("Done. Shape: " + str(self.mydb.shape) + ", Epoch size: " + str(self.epoch_size))

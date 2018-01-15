@@ -109,9 +109,9 @@ def run_epoch(session, x, y, data, correct, total, loss, train_op=None):
   corrects = 0
   totals = 0
   losses = 0
-  
+  data.reset_internal_counter()
   for i in range(data.epoch_size):
-    images, labels = data.get_batch()
+    images, labels = data.get_batch(i)
     if train_op:
       _, cor, tot, loss_val = session.run(
           [train_op, correct, total, loss], 
@@ -126,10 +126,10 @@ def run_epoch(session, x, y, data, correct, total, loss, train_op=None):
     totals += tot
     #print(loss_val.shape)
     losses += np.sum(loss_val)
-
-    if i % (data.epoch_size // 10) == 10 and train_op:
+    
+   # if i % (data.epoch_size // 10) == 10 and train_op:
       #saver.save(sess, os.path.join(model_save_dir, 'c3d_ucf_model'), global_step=step)
-      print("%.1f train loss: %.3f, acc: %.5f" % (i/data.epoch_size, losses/(i+1), corrects/totals))
+    #  print("%.1f train loss: %.3f, acc: %.5f" % (i/data.epoch_size, losses/(i+1), corrects/totals))
     
   return corrects / totals, losses / data.epoch_size
 
@@ -144,7 +144,8 @@ def run():
   global_start_time = time.time()
 
   config = Config()
-
+  config_valid = Config()
+  config_valid.batch_sampling='seq'
   # Create model directory
   if not os.path.exists(config.model_save_dir):
     os.makedirs(config.model_save_dir)
