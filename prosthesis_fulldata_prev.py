@@ -1,5 +1,3 @@
-
-
 from __future__ import division
 from __future__ import print_function
 
@@ -13,17 +11,17 @@ import tensorflow as tf
 import c3d_model
 import math
 import numpy as np
-from reader_user_ind_single_subj import MyData
+from reader_fulldata import MyData
 
 
 class Config():
   # Training hyperparameters
-  is_train = False
+  is_train = True
   batch_size = 30
   moving_average_decay = 0.9999
   num_epochs = 100
-  stable_learning_rate = 1e-7
-  finetune_learning_rate = 1e-5
+  stable_learning_rate = 1e-4
+  finetune_learning_rate = 1e-4
   drop_rate = 0.5
   batch_sampling = 'random'
 
@@ -35,14 +33,13 @@ class Config():
     
   # Other parameters
   model_save_dir = './models'
-  model_filename = 'prosthesis_model_user_ind_sing_subj2'
+  model_filename = 'full_1e-4slr1e-4flr0.5drop100epoch'
   skipstep=2
 
   # Training/Validation split
-#  train_trials = [0, 1, 3, 4, 5, 6, 9, 11]
-  train_trials = 1
-  # train_trials = [1,
-  valid_trials = 2
+  train_trials = [0, 1, 3, 4, 5, 6, 9, 11]
+  # train_trials = [1, 2]
+  valid_trials = [2, 7, 8, 10]
 
     
 def placeholder_inputs(config):
@@ -88,16 +85,10 @@ def tower_acc(logit, labels):
 
 
 def get_correct_total(logit, labels):
-  print ("get correct total function")
-  print(labels.shape)
-  print(logit.shape)
-  predicted = tf.argmax(logit, 1)
-  confusion = tf.confusion_matrix(labels, predicted, 5)
-
   correct_pred = tf.equal(tf.argmax(logit, 1), labels)
   correct = tf.reduce_sum(tf.cast(correct_pred, tf.int32))
   total = tf.size(correct_pred)
-  return confusion, correct, total
+  return correct, total
 
 
 def _variable_on_cpu(name, shape, initializer):
@@ -114,27 +105,33 @@ def _variable_with_weight_decay(name, shape, wd):
   return var
 
 
-def run_epoch(session, x, y, data, correct, total, loss, graph, confusion, train_op=None):
-  total_confusion = []
-  flag = False
-
+def run_epoch(session, x, y, data, correct, total, loss, train_op=None):
+  corrects = 0
+  totals = 0
+  losses = 0
+  
   for i in range(data.epoch_size):
     images, labels = data.get_batch(i)
-    batch_conf = session.run(
-        confusion,
-        feed_dict={x: images,
-                   y: labels[:, -1]})
-    #print(batch_conf)
-    #print("-----")
-    if flag == False:
-      total_confusion = batch_conf
-      flag = True
+    if train_op:
+      _, cor, tot, loss_val = session.run(
+          [train_op, correct, total, loss], 
+          feed_dict={x: images,
+                     y: labels[:, -1]})
     else:
-      total_confusion = np.add(total_confusion, batch_conf)
+      cor, tot, loss_val = session.run(
+          [correct, total, loss], 
+          feed_dict={x: images,
+                     y: labels[:, -1]})
+    corrects += cor
+    totals += tot
+    #print(loss_val.shape)
+    losses += np.sum(loss_val)
 
-  print("total confusion is")
-  print(total_confusion)
-  return total_confusion
+    if i % (data.epoch_size // 10) == 10 and train_op:
+      #saver.save(sess, os.path.join(model_save_dir, 'c3d_ucf_model'), global_step=step)
+      print("%.1f train loss: %.3f, acc: %.5f" % (i/data.epoch_size, losses/(i+1), corrects/totals))
+    
+  return corrects / totals, losses / data.epoch_size
 
 
 def format_time(duration):
@@ -154,8 +151,7 @@ def run(frpclip):
     os.makedirs(config.model_save_dir)
   model_filename = "prosthesis_model"
   
-  graph = tf.Graph()
-  with graph.as_default():
+  with tf.Graph().as_default():
     global_step = tf.get_variable(
         'global_step', [], initializer=tf.constant_initializer(0), trainable=False)
     images_placeholder, labels_placeholder = placeholder_inputs(config)
@@ -214,7 +210,7 @@ def run(frpclip):
 
     logits = tf.concat(logits, 0)
     accuracy = tower_acc(logits, labels_placeholder)
-    confusion, correct, total = get_correct_total(logits, labels_placeholder)
+    correct, total = get_correct_total(logits, labels_placeholder)
     grads1 = average_gradients(tower_grads1)
     grads2 = average_gradients(tower_grads2)
     apply_gradient_op1 = opt_stable.apply_gradients(grads1)
@@ -230,13 +226,14 @@ def run(frpclip):
     # Create a session for running Ops on the Graph.
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     sess.run(init)
-
+    
     best_valid_acc = 0.0
-    #train_data = MyData(
-    #    path='.', 
-    #    set_indices=config.train_trials, 
-    #    config=config, 
-    #    data_type="training")
+    if config.is_train: 
+      train_data = MyData(
+          path='.', 
+          set_indices=config.train_trials, 
+          config=config, 
+          data_type="training")
     valid_data = MyData(
         path='.', 
         set_indices=config.valid_trials, 
@@ -247,6 +244,8 @@ def run(frpclip):
       for epoch in range(config.num_epochs):
         start_time = time.time()
         
+        train_acc, train_loss = run_epoch(
+            sess, images_placeholder, labels_placeholder, train_data, correct, total, loss, train_op)
         valid_acc, valid_loss = run_epoch(
             sess, images_placeholder, labels_placeholder, valid_data, correct, total, loss)
         
@@ -254,22 +253,20 @@ def run(frpclip):
         print('Epoch %d train loss: %.3f, acc: %.5f. Valid loss: %.3f, acc: %.5f, duration: %d:%02d:%02d' % \
               ((epoch + 1, train_loss, train_acc, valid_loss, valid_acc) + format_time(duration)))
         
+        if valid_acc > best_valid_acc:
+          save_path = saver.save(
+              sess, os.path.join(config.model_save_dir, config.model_filename))
+          print('Valid accuracy improved. Model saved in file: %s' % save_path)
+          best_valid_acc = valid_acc
+    
     saver.restore(sess, os.path.join(config.model_save_dir, config.model_filename))
     print("Model restored")
-#    best_valid_acc, best_valid_loss = run_epoch(
-    writer = tf.summary.FileWriter('.')
-    writer.add_graph(tf.get_default_graph())
-#        sess, images_placeholder, labels_placeholder, valid_data, correct, total, loss)
-
-    runme = 1
-    if (runme == 1):
-      print("run epoch")
-      myconf = run_epoch(
-          sess, images_placeholder, labels_placeholder, valid_data, correct, total, loss, graph, confusion)
-      print('after epoch run')
-
+    best_valid_acc, best_valid_loss = run_epoch(
+        sess, images_placeholder, labels_placeholder, valid_data, correct, total, loss)
 
   total_duration = time.time() - global_start_time
+  print("Done. Best validation loss: %.3f, accuracy: %.5f. Total duration: %d:%02d:%02d" % ((best_valid_loss, best_valid_acc) + format_time(total_duration)))
+
 
 if __name__ == '__main__':
   run(16)

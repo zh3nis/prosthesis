@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import time
 import numpy
 from six.moves import xrange
@@ -19,9 +19,9 @@ class Config():
   is_train = True
   batch_size = 30
   moving_average_decay = 0.9999
-  num_epochs = 16
+  num_epochs = 100
   stable_learning_rate = 1e-4
-  finetune_learning_rate = 1e-4
+  finetune_learning_rate = 1e-5
   drop_rate = 0.5
   batch_sampling = 'random'
 
@@ -33,7 +33,7 @@ class Config():
     
   # Other parameters
   model_save_dir = './models'
-  model_filename = 'prosthesis_model'
+  model_filename = 'full_1e-4slr1e-5flr0.5drop100epoch'
   skipstep=2
 
   # Training/Validation split

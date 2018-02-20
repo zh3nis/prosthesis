@@ -14,7 +14,7 @@ def max_pool(name, l_input, k):
   return tf.nn.max_pool3d(l_input, ksize=[1, k, 2, 2, 1], strides=[1, k, 2, 2, 1], padding='SAME', name=name)
 
 def inference_c3d(_X, _dropout, batch_size, _weights, _biases):
-
+  print("inference_c3d function start")
   # Convolution Layer
   conv1 = conv3d('conv1', _X, _weights['wc1'], _biases['bc1'])
   conv1 = tf.nn.relu(conv1, 'relu1')
@@ -53,11 +53,9 @@ def inference_c3d(_X, _dropout, batch_size, _weights, _biases):
 
   dense1 = tf.nn.relu(dense1, name='fc1') # Relu activation
   dense1 = tf.nn.dropout(dense1, _dropout)
-
   dense2 = tf.nn.relu(tf.matmul(dense1, _weights['wd2']) + _biases['bd2'], name='fc2') # Relu activation
   dense2 = tf.nn.dropout(dense2, _dropout)
-
   # Output: class prediction
   out = tf.matmul(dense2, _weights['out']) + _biases['out']
-
+  print("end of function")
   return out

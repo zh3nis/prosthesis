@@ -22,7 +22,7 @@ class Config():
   batch_size = 30
   moving_average_decay = 0.9999
   num_epochs = 100
-  stable_learning_rate = 1e-7
+  stable_learning_rate = 1e-4
   finetune_learning_rate = 1e-5
   drop_rate = 0.5
   batch_sampling = 'random'
@@ -35,14 +35,14 @@ class Config():
     
   # Other parameters
   model_save_dir = './models'
-  model_filename = 'prosthesis_model_user_ind_sing_subj2'
+  model_filename = 'user_ind_single_ft1e-5stlr1e-4drop0.5'
   skipstep=2
 
   # Training/Validation split
 #  train_trials = [0, 1, 3, 4, 5, 6, 9, 11]
-  train_trials = [1]
+  train_trials = 1
   # train_trials = [1, 2]
-  valid_trials = [2]
+  valid_trials = 2
 
     
 def placeholder_inputs(config):

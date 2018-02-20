@@ -62,7 +62,8 @@ class MyData:
     first = True
     print("Reading %s trials: " % self.data_type, end='')
     sys.stdout.flush()
-    for i in self.set_indices:
+    fulldirlist = []
+    for i in [1,2]:
       daydir = 'day%d/' % i
       drname1 = '/mnt/data/%s/' % self.mysubj
       drname1 = "{0}{1}".format(drname1, daydir)
@@ -70,12 +71,19 @@ class MyData:
       buf1 = "{0}{1}{2}{3}".format('/mnt/data/', self.mysubj, '/', daydir)
       print(buf1)
       sys.stdout.flush()
-      fulldirlist = []
       for mydir in day1dirs:
         depthdir = "{0}{1}/".format(buf1, mydir)
   	fulldirlist.append(depthdir)
 
+    if 1==1:
       print("printing one subject directories")
+      fulldirlist = np.sort(fulldirlist)
+      print(fulldirlist)
+      if self.set_indices == 1:
+        fulldirlist = fulldirlist[::2]
+      else:
+	fulldirlist = fulldirlist[1::2]
+      print("selected needed rows")
       print(fulldirlist)
 
       for mydir in fulldirlist:
